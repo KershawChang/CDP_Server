@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="stylesheet" type="text/css" class="__meteor-css__" href="{{ static_url("ed6cc9e58ebac9af5133a012cf764bf354b50bf6.css") }}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+<title>{{title}}</title>
+<style type="text/css">
+  .box {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+  }
+
+  .box .row.header {
+    flex: 0 1 auto;
+    /* The above is shorthand for:
+    flex-grow: 0,
+    flex-shrink: 1,
+    flex-basis: auto
+    */
+  }
+
+  .box .row.content {
+    flex: 1 1 auto;
+  }
+
+  .box .row.footer {
+    flex: 0 1 40px;
+  }
+</style>
+
+
+
+<script>
+  function createIframe(url) {
+    var container = document.getElementById("tab-container");
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+
+    var iframe = document.createElement("iframe");
+    var rect = container.getBoundingClientRect();
+
+    iframe.style.width = (rect.right - rect.left - 10).toString() + "px";
+    iframe.style.height = (rect.bottom - rect.top - 50).toString() + "px";
+    iframe.src = url;
+    console.log(url);
+    container.appendChild(iframe);
+  }
+</script>
+
+</head>
+<body>
+
+
+
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+
+    <a class="navbar-brand" href="#">{{title}}</a>
+  </div>
+  <div id="navbar" class="navbar-collapse collapse">
+  </div>
+    </div>
+  </nav>
+
+  <!--div style="position: fixed; left:10px; top:10px; height:100%; width:100%; margin:0; padding:0;"></div-->
+  <div class="box" style="position: fixed; left:10px; top:10px; height:100%; width:100%; margin:0; padding:0;">
+    <div class="row header" style="position: relative; left:10px; top:10px;">
+    <h3 class="page-header">Select two tests to compare</h3>
+    <select multiple id="e1" style="width:800px">
+      {% for key in tests %}
+         <option value="{{ key }}">{{ tests[key]['title'] }}</option>
+      {% end %}
+    </select>
+    <input type="button" id="compare" value="Compare">
+    </div>
+    <div id="tab-container" class="row content" style="position: relative; left:10px; top:10px;"></div>
+  </div>
+
+<script>
+  $("#e1").select2();
+  var count = 0;
+
+  $("select").on("select2:close", function (evt) {
+    var uldiv = $(this).siblings("span.select2").find("ul")
+    count = uldiv.find("li").length - 1;
+  });
+
+  $("#compare").click(function(){
+    console.log($("#e1").val().join("+"));
+    createIframe("/result/" + $("#e1").val().join("+"));
+  });
+</script>
+</body>
+</html>
+
+
