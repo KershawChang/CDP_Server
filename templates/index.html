@@ -34,7 +34,16 @@
 
 
 <script>
-  function createIframe(url) {
+  function createIframe(selectTests) {
+    var res = selectTests.split("+");
+    if (res.length != 2) {
+      alert("Please select 2 tests.");
+      return;
+    }
+
+    var url = "result/selected?t1=" + res[0] + "&t2=" + res[1];
+
+
     var container = document.getElementById("tab-container");
     while (container.firstChild) {
       container.removeChild(container.firstChild);
@@ -92,7 +101,7 @@
 
   $("#compare").click(function(){
     //console.log($("#e1").val().join("+"));
-    createIframe("/result/" + $("#e1").val().join("+"));
+    createIframe($("#e1").val().join("+"));
   });
 </script>
 </body>

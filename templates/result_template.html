@@ -107,11 +107,11 @@
   var selectedSite, selectedType, selectedMetric;
   var testDataTable = [{"title": "{{selectedTests[0]['title']}}",
                         "color": "red",
-                        "url": "{{static_url(selectedTests[0]['path'])}}",
+                        "url": "{{'../static/' + selectedTests[0]['path']}}",
                         "data": {}},
                        {"title": "{{selectedTests[1]['title']}}",
                         "color": "steelblue",
-                        "url": "{{static_url(selectedTests[1]['path'])}}",
+                        "url": "{{'../static/' + selectedTests[1]['path']}}",
                         "data": {}}];
 
   var hasOwnProperty = Object.prototype.hasOwnProperty;

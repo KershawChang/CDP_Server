@@ -6,8 +6,11 @@ from os import listdir
 from os.path import isdir, join
 import json
 import sys
+from tornado.log import enable_pretty_logging
+enable_pretty_logging()
 
-testDataPath = os.path.join(os.getcwd(), "static/testData/")
+testDataDir = "static/testData/"
+testDataPath = os.path.join(os.getcwd(), testDataDir)
 tests = {};
 logPath = './server.log'
 
@@ -29,7 +32,8 @@ class LogHandler(tornado.web.RequestHandler):
 
 class ResultHandler(tornado.web.RequestHandler):
     def get(self, data):
-        selectedKeys = data.split("+");
+        selectedKeys = [self.get_argument("t1"), self.get_argument("t2")]
+        print selectedKeys
         selectedTests = [];
         for k in selectedKeys:
             selectedTests.append(tests[k])
