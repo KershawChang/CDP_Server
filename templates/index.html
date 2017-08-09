@@ -46,7 +46,6 @@
     iframe.style.width = (rect.right - rect.left - 10).toString() + "px";
     iframe.style.height = (rect.bottom - rect.top - 50).toString() + "px";
     iframe.src = url;
-    console.log(url);
     container.appendChild(iframe);
   }
 </script>
@@ -92,7 +91,7 @@
   });
 
   $("#compare").click(function(){
-    console.log($("#e1").val().join("+"));
+    //console.log($("#e1").val().join("+"));
     createIframe("/result/" + $("#e1").val().join("+"));
   });
 </script>

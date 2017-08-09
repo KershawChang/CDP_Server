@@ -1,16 +1,31 @@
 import os.path
 import tornado.ioloop
 import tornado.web
+import tornado.options
 from os import listdir
 from os.path import isdir, join
 import json
+import sys
 
 testDataPath = os.path.join(os.getcwd(), "static/testData/")
 tests = {};
+logPath = './server.log'
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html", title="CDP Test", tests=tests)
+
+class StopHandler(tornado.web.RequestHandler):
+    def get(self):
+        tornado.ioloop.IOLoop.current().stop()
+
+class LogHandler(tornado.web.RequestHandler):
+    def get(self):
+        with open(logPath, 'r') as f:
+            data = f.readlines()
+            for l in data:
+                self.write('<p>' + l + '</p>')
+            self.finish()
 
 class ResultHandler(tornado.web.RequestHandler):
     def get(self, data):
@@ -19,7 +34,6 @@ class ResultHandler(tornado.web.RequestHandler):
         for k in selectedKeys:
             selectedTests.append(tests[k])
 
-        print selectedTests
         sites = ["CNN", "Twitter", "Wired", "nytimes", "500px"]
         dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"},
                      {"text": "Trackers", "value": "TrackingResult"}]
@@ -29,6 +43,8 @@ class ResultHandler(tornado.web.RequestHandler):
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [(r"/", MainHandler),
+                    (r"/stop", StopHandler),
+                    (r"/log", LogHandler),
                     (r"/result/([^/]*)", ResultHandler)]
         settings = {
             "template_path": os.path.join(os.getcwd(), "templates"),
@@ -47,4 +63,8 @@ if __name__ == "__main__":
 
     app =Application()
     app.listen(8888)
+    args = sys.argv
+    args.append("--log_file_prefix=./server.log")
+    tornado.options.options.logging = "debug"
+    tornado.options.parse_command_line(args)
     tornado.ioloop.IOLoop.current().start()

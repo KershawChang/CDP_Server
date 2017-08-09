@@ -209,6 +209,7 @@
   }
 
   function loadJsonData(url1, url2, callback) {
+    debug("loadJsonData:" + url1 + "," + url2);
     d3.json(url1, function (error,data1) {
         if (error) return console.warn(error);
       d3.json(url2, function (error,data2) {
@@ -222,8 +223,8 @@
 
   function createSummaryTable(site, type, metric) {
     if (isEmpty(testDataTable[0].data) || isEmpty(testDataTable[1].data)) {
-      var url1 = testDataTable[0].url + selectedSite + ".json";
-      var url2 = testDataTable[1].url + selectedSite + ".json";
+      var url1 = testDataTable[0].url + selectedSite.toLowerCase() + ".json";
+      var url2 = testDataTable[1].url + selectedSite.toLowerCase() + ".json";
       loadJsonData(url1, url2, function() {
         createSummaryTable(site, type, metric);
       });
@@ -448,8 +449,8 @@
 
   function createChart(site, type, metric) {
     if (isEmpty(testDataTable[0].data) || isEmpty(testDataTable[1].data)) {
-      var url1 = testDataTable[0].url + selectedSite + ".json";
-      var url2 = testDataTable[1].url + selectedSite + ".json";
+      var url1 = testDataTable[0].url + selectedSite.toLowerCase() + ".json";
+      var url2 = testDataTable[1].url + selectedSite.toLowerCase() + ".json";
       loadJsonData(url1, url2, function() {
         createChart(site, type, metric);
       });
