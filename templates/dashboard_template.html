@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<link rel="apple-touch-icon" sizes="76x76" href="{{ static_url('assets/img/apple-icon.png')}}">
+	<link rel="icon" type="image/png" sizes="96x96" href="{{ static_url('assets/img/favicon.png')}}">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+	<title>Paper Dashboard by Creative Tim</title>
+
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+
+
+    <!-- Bootstrap core CSS     -->
+    <link href="{{ static_url('assets/css/bootstrap.min.css')}}" rel="stylesheet" />
+
+    <!-- Animation library for notifications   -->
+    <link href="{{ static_url('assets/css/animate.min.css')}}" rel="stylesheet"/>
+
+    <!--  Paper Dashboard core CSS    -->
+    <link href="{{ static_url('assets/css/paper-dashboard.css')}}" rel="stylesheet"/>
+
+
+    <!--  CSS for Demo Purpose, don't include it in your project     -->
+    <link href="{{ static_url('assets/css/demo.css')}}" rel="stylesheet" />
+
+
+    <!--  Fonts and icons     -->
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Muli:400,300' rel='stylesheet' type='text/css'>
+    <link href="{{ static_url('assets/css/themify-icons.css')}}" rel="stylesheet">
+
+    <style>
+        table.avg {
+            border-collapse: collapse;
+        }
+        /* Zebra striping */
+        table.avg tr:nth-of-type(odd) {
+            background: #eee;
+        }
+        table.avg th {
+            background: #D3D3D3;
+            background-repeat: no-repeat;
+            background-position: 3% center;
+        }
+        table.avg td, th {
+            padding: 6px;
+            text-align: left;
+        }
+        .line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 2px;
+        }
+
+        div.tooltip {
+            position: absolute;
+            text-align: center;
+            width: 60px;
+            height: 28px;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+    </style>
+
+    <script type="text/javascript" src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+  <script type="text/javascript">
+  const TimeDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)'];
+
+  var tipDiv = null;
+  var selectedSite, selectedType, selectedMetric;
+  var testDataTable = [{"title": "{{selectedTests[0]['title']}}",
+                        "color": "red",
+                        "url": "{{'../static/' + selectedTests[0]['path']}}",
+                        "data": {}},
+                       {"title": "{{selectedTests[1]['title']}}",
+                        "color": "steelblue",
+                        "url": "{{'../static/' + selectedTests[1]['path']}}",
+                        "data": {}}];
+
+  var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+  function isEmpty(obj) {
+
+    // null and undefined are "empty"
+    if (obj == null) return true;
+
+    // Assume if it has a length property with a non-zero value
+    // that that property is correct.
+    if (obj.length > 0)    return false;
+    if (obj.length === 0)  return true;
+
+    // If it isn't an object at this point
+    // it is empty, but it can't be anything *but* empty
+    // Is it empty?  Depends on your application.
+    if (typeof obj !== "object") return true;
+
+    // Otherwise, does it have any properties of its own?
+    // Note that this doesn't handle
+    // toString and valueOf enumeration bugs in IE < 9
+    for (var key in obj) {
+        if (hasOwnProperty.call(obj, key)) return false;
+    }
+
+    return true;
+  }
+
+  function debug(msg) {
+    console.log(msg);
+  }
+
+  function drawTable(divname, columns, data) {
+    d3.select(divname).html("");
+    var table = d3.select(divname).append('table');
+    table.attr("class", "avg");
+
+    var thead = table.append('thead');
+    var tbody = table.append('tbody');
+
+    var header = [selectedSite, "{{selectedTests[0]['title']}}", "{{selectedTests[1]['title']}}", ""];
+    thead.append('tr')
+      .selectAll('th')
+      .data(header).enter()
+      .append('th')
+      .text(function (column) { return column; });
+
+    // append the header row
+    thead.append('tr')
+      .selectAll('th')
+      .data(columns).enter()
+      .append('th')
+      .text(function (column) { return column; });
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll('tr')
+      .data(data)
+      .enter()
+      .append('tr');
+
+    // create a cell in each row for each column
+    var cells = rows.selectAll('td')
+      .data(function (row) {
+        return columns.map(function (column, index) {
+          if (index === 1)
+            return {column: column, value: row["value1"]};
+          if (index === 2)
+            return {column: column, value: row["value2"]};
+          return {column: column, value: row[column]};
+        });
+      })
+      .enter()
+      .append('td');
+
+    cells.append('span')
+      .attr('class', function(d) {
+        if (d.column != "Diff") {
+          return "";
+        }
+        return d.value > 0 ? "glyphicon glyphicon-triangle-top" : "glyphicon glyphicon-triangle-bottom";
+      })
+      .attr('style', function(d) {
+        if (d.column != "Diff") {
+          return "";
+        }
+        return d.value > 0 ? "color: red;" : "color: green";
+      })
+      .text(function (d) {
+        if (d.column != "Diff") {
+          return d.value;
+        }
+        return d.value.toString() + "%";
+      });
+  }
+
+  function loadJsonData(url1, url2, callback) {
+    debug("loadJsonData:" + url1 + "," + url2);
+    d3.json(url1, function (error,data1) {
+        if (error) return console.warn(error);
+      d3.json(url2, function (error,data2) {
+        if (error) return console.warn(error);
+        testDataTable[0].data = data1;
+        testDataTable[1].data = data2;
+        callback();
+      });
+    });
+  }
+
+  function createSummaryTable(site, type, metric) {
+    debug("createSummaryTable:" + site + "," + type + "," + metric);
+    if (isEmpty(testDataTable[0].data) || isEmpty(testDataTable[1].data)) {
+      var url1 = testDataTable[0].url + selectedSite.toLowerCase() + ".json";
+      var url2 = testDataTable[1].url + selectedSite.toLowerCase() + ".json";
+      loadJsonData(url1, url2, function() {
+        createSummaryTable(site, type, metric);
+      });
+      return;
+    }
+
+    var col = ['url'];
+    for (var i = 0; i < 2; i++) {
+      col.push(metric + " Avg.");
+    }
+    col.push("Diff");
+
+    var result = [];
+    for (var key in testDataTable[0]["data"][type]) {
+      var data = {};
+      data["url"] = key;
+      var avg1 = testDataTable[0]["data"][type][key]["avg"][metric];
+      if (!(key in testDataTable[1]["data"][type])) {
+        continue;
+      }
+
+      var avg2 = testDataTable[1]["data"][type][key]["avg"][metric];
+      var diff = ((avg2 - avg1) / avg2 * 100).toFixed(2);
+      data["value1"] = avg1;
+      data["value2"] = avg2;
+
+      data["Diff"] = diff;
+      result.push(data);
+    }
+
+    drawTable('#summary_table', col, result);
+  }
+
+  function onSiteChange(name) {
+    selectedSite = name;
+    document.getElementById("id_" + name).checked = true;
+    testDataTable[0].data = null;
+    testDataTable[1].data = null;
+    if (selectedType && selectedMetric) {
+      createSummaryTable(selectedSite, selectedType, selectedMetric);
+      createChart(selectedSite, selectedType, selectedMetric);
+    }
+  }
+
+  function onElementChange(type) {
+    selectedType = type;
+    document.getElementById("id_" + type).checked = true;
+    debug(selectedType);
+    if (selectedSite && selectedMetric) {
+      createSummaryTable(selectedSite, selectedType, selectedMetric);
+      createChart(selectedSite, selectedType, selectedMetric);
+    }
+  }
+
+  function onMetricChange(metric) {
+    selectedMetric = metric;
+    document.getElementById("metricId_" + metric).checked = true;
+    if (selectedSite && selectedType) {
+      createSummaryTable(selectedSite, selectedType, selectedMetric);
+      createChart(selectedSite, selectedType, selectedMetric);
+    }
+  }
+
+  function drawChart(divname, data) {
+    // Set the dimensions of the canvas / graph
+    var margin = {top: 30, right: 20, bottom: 30, left: 50},
+      width = 500 - margin.left - margin.right,
+      height = 350 - margin.top - margin.bottom;
+
+    if (!tipDiv) {
+      tipDiv = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+    }
+
+    var x = d3.scaleLinear()
+        .range([0, width]);
+
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+
+    // define the 1st line
+    var valueline = d3.line()
+      .x(function(d) { return x(d.count); })
+      .y(function(d) { return y(d.value1); });
+
+    // define the 2nd line
+    var valueline2 = d3.line()
+      .x(function(d) { return x(d.count); })
+      .y(function(d) { return y(d.value2); });
+
+    var svg = d3.select(divname).append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+    // Scale the range of the data
+    x.domain([0, data[data.length - 1].count]);
+    y.domain([data[0].value1 > data[0].value2 ? data[0].value2 * 2 / 3  : data[0].value1 * 2 / 3,
+              d3.max(data, function(d) { return d.value1 > d.value2 ? d.value1 : d.value2; })]);
+
+    // Add the valueline path.
+    svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .style("stroke", testDataTable[0].color)
+      .attr("d", valueline);
+
+    // Add the valueline2 path.
+    svg.append("path")
+      .data([data])
+      .attr("class", "line")
+      .style("stroke", testDataTable[1].color)
+      .attr("d", valueline2);
+
+    // Add the scatterplot
+    svg.selectAll("dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("r", 2.5)
+        .style("fill", testDataTable[0].color)
+        .attr("cx", function(d) { return x(d.count); })
+        .attr("cy", function(d) { return y(d.value1); })
+        .on("mouseover", function(d) {
+          tipDiv.transition()
+            .duration(200)
+            .style("opacity", .9);
+          tipDiv.html(d.value1)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+          tipDiv.transition()
+            .duration(500)
+            .style("opacity", 0);
+        });
+
+    svg.selectAll("dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("r", 2.5)
+        .style("fill", testDataTable[1].color)
+        .attr("cx", function(d) { return x(d.count); })
+        .attr("cy", function(d) { return y(d.value2); })
+        .on("mouseover", function(d) {
+          tipDiv.transition()
+            .duration(200)
+            .style("opacity", .9);
+          tipDiv.html(d.value2)
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        })
+        .on("mouseout", function(d) {
+          tipDiv.transition()
+            .duration(500)
+            .style("opacity", 0);
+        });
+
+    // Add the X Axis
+    svg.append("g")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+    // Add the Y Axis
+    svg.append("g")
+      .call(d3.axisLeft(y));
+
+    legentTable = [{"text": testDataTable[0].title, "color": testDataTable[0].color},
+                   {"text": testDataTable[1].title, "color": testDataTable[1].color}];
+    // add legend
+    var legend = svg.append("g")
+      .attr("class", "legend")
+        //.attr("x", w - 65)
+        //.attr("y", 50)
+      .attr("height", 100)
+      .attr("width", 100)
+      .attr('transform', 'translate(-20,10)');
+
+    legend.selectAll('rect')
+      .data(legentTable)
+      .enter()
+      .append("rect")
+      .attr("x", 30)
+      .attr("y", function(d, i){ return i *  20;})
+      .attr("width", 10)
+      .attr("height", 10)
+      .style("fill", function(d) {
+          return d.color;
+      });
+
+      legend.selectAll('text')
+        .data(legentTable)
+        .enter()
+        .append("text")
+        .attr("x", 45)
+        .attr("y", function(d, i){ return i *  20 + 10;})
+        .text(function(d) {
+          return d.text;
+      });
+  }
+
+  function createChartDiv(index, title) {
+    d3.select("#chartRow").append("div")
+      .attr("class", "col-md-6")
+      .attr("id", "chart" + index.toString());
+
+    d3.select("#chart" + index.toString()).append("div")
+      .attr("class", "card")
+      .attr("id", "chart_" + index.toString());
+
+    d3.select("#chart_" + index.toString()).append("div")
+      .attr("class", "header")
+      .append("h6")
+      .attr("class", "title")
+      .text(title);
+
+    d3.select("#chart_" + index.toString()).append("div")
+      .attr("class", "content")
+      .attr("id", "chart__" + index.toString());
+
+    return  "chart__" + index.toString();
+  }
+
+  function createChart(site, type, metric) {
+    if (isEmpty(testDataTable[0].data) || isEmpty(testDataTable[1].data)) {
+      var url1 = testDataTable[0].url + selectedSite.toLowerCase() + ".json";
+      var url2 = testDataTable[1].url + selectedSite.toLowerCase() + ".json";
+      loadJsonData(url1, url2, function() {
+        createChart(site, type, metric);
+      });
+      return;
+    }
+
+    d3.select("#chartRow").html("");
+
+    function createData(url) {
+      var data1 = [];
+      var data2 = [];
+      var timingArray1 = testDataTable[0]["data"][type][url].timing;
+      var timingArray2 = testDataTable[1]["data"][type][url].timing;
+      for (var i = 0; i < Math.min(timingArray1.length, timingArray2.length); i++) {
+        data1.push({"value": timingArray1[i][metric]});
+        data2.push({"value": timingArray2[i][metric]});
+      }
+
+      data1.sort(function(a, b){
+        if(a.value < b.value) return -1;
+        if(a.value > b.value) return 1;
+        return 0;
+      });
+
+      data2.sort(function(a, b){
+        if(a.value < b.value) return -1;
+        if(a.value > b.value) return 1;
+        return 0;
+      });
+
+      var data = [];
+      for (var i = 0; i < data1.length; i++) {
+        data.push({"count": i + 1, "value1": data1[i].value, "value2": data2[i].value});
+      }
+
+      return data;
+    }
+
+    var i = 0;
+    for (var key in testDataTable[0]["data"][type]) {
+      if (key in testDataTable[0]["data"][type] &&
+          key in testDataTable[1]["data"][type]) {
+        /*var chartDiv = d3.select("#chart").append("div")
+          .attr("class", "chart")
+          .attr("id", "chart" + i.toString());
+        var data = createData(key);
+        drawChart("#chart" + i.toString(), data, key);*/
+        var divId = createChartDiv(i, key);
+        var data = createData(key);
+        drawChart("#" + divId, data, key);
+        i++;
+      }
+    }
+  }
+
+  function showSummaryJson() {
+    var url1 = testDataTable[0].url + "summary.json";
+    var url2 = testDataTable[1].url + "summary.json";
+    d3.json(url1, function (error,data1) {
+        if (error) return console.warn(error);
+      d3.json(url2, function (error,data2) {
+        if (error) return console.warn(error);
+
+        var col = ['', data1.title, data2.title];
+        var table = d3.select("#summaryDiv").append('table');
+        table.attr("class", "table table-striped");
+
+        var thead = table.append('thead');
+        var tbody = table.append('tbody');
+
+        thead.append('tr')
+          .selectAll('th')
+          .data(col).enter()
+          .append('th')
+          .text(function (column) { return column; });
+
+        summaryData = [];
+        summaryData.push({0: "privacy.trackingprotection.lower_network_priority",
+                          1: data1.Pref["privacy.trackingprotection.lower_network_priority"],
+                          2: data2.Pref["privacy.trackingprotection.lower_network_priority"]});
+        summaryData.push({0: "network.http.throttle.enable",
+                          1: data1.Pref["network.http.throttle.enable"],
+                          2: data2.Pref["network.http.throttle.enable"]});
+        summaryData.push({0: "Proxy Type",
+                          1: data1.ProxyType,
+                          2: data2.ProxyType});
+        // create a row for each object in the data
+        var rows = tbody.selectAll('tr')
+          .data(summaryData)
+          .enter()
+          .append('tr');
+
+        // create a cell in each row for each column
+        var cells = rows.selectAll('td')
+          .data(function (row) {
+            return summaryData.map(function (d, index) {
+              return {column: d, value: row[index]};
+            });
+          })
+          .enter()
+          .append('td')
+          .text(function (d, index) {
+            return d.value;
+          });
+      });
+    });
+  }
+
+  window.addEventListener("load", function load(event){
+    window.removeEventListener("load", load, false); //remove listener, no longer needed
+    showSummaryJson();
+
+    onSiteChange("{{sites[0]}}");
+    onElementChange("{{dataTypes[0]['value']}}");
+    onMetricChange("{{TimingDataStr[0]}}");
+  },false);
+</script>
+
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="main-panel" style="width:100%">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">Dashboard</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="header">
+                                <h4 class="title">Users Behavior</h4>
+                                <p class="category">24 Hours performance</p>
+                            </div>
+                            <div class="content" id="summaryDiv">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="card">
+                            <div class="content">
+                                <div class="row">
+                                    <div class="col-xs-7">
+                                        <form>
+                                            {% for site in sites %}
+                                            <input type="radio" name="site" id="{{'id_' + site}}" onchange="onSiteChange('{{site}}')">{{site}}<br>
+                                            {% end %}
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="footer">
+                                    <hr />
+                                    <div class="stats">
+                                        <i class="ti-calendar"></i> Web sites
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="card">
+                            <div class="content">
+                                <div class="row">
+                                    <div class="col-xs-7">
+                                        <form>
+                                            {% for type in dataTypes %}
+                                            <input type="radio" name="type" id="{{'id_' + type['value']}}" onchange="onElementChange('{{type['value']}}')">{{type["text"]}}<br>
+                                            {% end %}
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="footer">
+                                    <hr />
+                                    <div class="stats">
+                                        <i class="ti-calendar"></i> Element type
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6">
+                        <div class="card">
+                            <div class="content">
+                                <div class="row">
+                                    <div class="col-xs-7">
+                                        <form>
+                                            {% for index,timeStr in enumerate(TimingDataStr) %}
+                                            <input type="radio" name="metric" id="{{'metricId_' + timeStr}}" onchange="onMetricChange('{{timeStr}}')">{{timeStr}}<br>
+                                            {% end %}
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="footer">
+                                    <hr />
+                                    <div class="stats">
+                                        <i class="ti-calendar"></i> Metric
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="header">
+                                <h4 class="title">Average Numbers</h4>
+                            </div>
+                            <div class="content">
+                                <div id="summary_table"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="chartRow">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>
+
+
+
+

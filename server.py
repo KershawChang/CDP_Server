@@ -42,7 +42,7 @@ class ResultHandler(tornado.web.RequestHandler):
         dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"},
                      {"text": "Trackers", "value": "TrackingResult"}]
         TimingDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)']
-        self.render("result_template.html", selectedTests=selectedTests, sites=sites, dataTypes=dataTypes, TimingDataStr=TimingDataStr)
+        self.render("dashboard_template.html", selectedTests=selectedTests, sites=sites, dataTypes=dataTypes, TimingDataStr=TimingDataStr)
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -65,7 +65,7 @@ if __name__ == "__main__":
             data = json.load(data_file)
             tests[d] = {'title': data['title'], 'path': 'testData/' + d + '/'}
 
-    app =Application()
+    app = Application()
     app.listen(8888)
     args = sys.argv
     args.append("--log_file_prefix=./server.log")
