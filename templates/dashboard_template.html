@@ -499,12 +499,11 @@
           .text(function (column) { return column; });
 
         summaryData = [];
-        summaryData.push({0: "privacy.trackingprotection.lower_network_priority",
-                          1: data1.Pref["privacy.trackingprotection.lower_network_priority"],
-                          2: data2.Pref["privacy.trackingprotection.lower_network_priority"]});
-        summaryData.push({0: "network.http.throttle.enable",
-                          1: data1.Pref["network.http.throttle.enable"],
-                          2: data2.Pref["network.http.throttle.enable"]});
+        {% for pref in prefList %}
+        summaryData.push({0: "{{pref}}",
+                          1: data1.Pref["{{pref}}"],
+                          2: data2.Pref["{{pref}}"]});
+        {% end %}
         summaryData.push({0: "Proxy Type",
                           1: data1.ProxyType,
                           2: data2.ProxyType});

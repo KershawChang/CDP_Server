@@ -16,6 +16,11 @@ testCategoryTable = {'tp': 'Tracking Protection',
 tests = {};
 logPath = './server.log'
 
+interestPrefTable = {'tp':['privacy.trackingprotection.lower_network_priority',
+                           'network.http.throttle.enable'],
+                     'tabs':['network.http.active_tab_priority',
+                             'network.http.throttle.enable']}
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self, name):
         selectedCategory = name.replace('.html', '')
@@ -49,7 +54,8 @@ class ResultHandler(tornado.web.RequestHandler):
         if category == 'tp':
             dataTypes.append({"text": "Trackers", "value": "TrackingResult"})
         TimingDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)']
-        self.render("dashboard_template.html", selectedTests=selectedTests, sites=sites, dataTypes=dataTypes, TimingDataStr=TimingDataStr)
+        prefList = interestPrefTable[category]
+        self.render("dashboard_template.html", prefList=prefList, selectedTests=selectedTests, sites=sites, dataTypes=dataTypes, TimingDataStr=TimingDataStr)
 
 class Application(tornado.web.Application):
     def __init__(self):
