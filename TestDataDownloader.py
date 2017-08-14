@@ -3,6 +3,7 @@ import csv
 import json
 import urllib2
 import os.path
+import shutil
 
 TimingDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)']
 
@@ -161,21 +162,28 @@ TestDataPath = os.path.join(os.getcwd(), "static/testData/")
 # http://wpt.xeon.tw/result/170801_TX_4W/requests.csv
 WPTUrl = "http://wpt.xeon.tw/result/"
 
-testCategoryTable = {'TP': 'Tracking Protection'}
+testCategoryTable = {'tp': 'Tracking Protection',
+                     'tabs': 'Active Tab Priority (B/C Slots)'}
 
 prefTable = {'LNP': 'privacy.trackingprotection.lower_network_priority',
-             'Throttle': 'network.http.throttle.enable'}
+             'Throttle': 'network.http.throttle.enable',
+             'NoTabPrio': 'network.http.active_tab_priority'}
 
 testProxyTable = {'internet': 'none',
                   'mitm': 'mitm proxy'}
 
+
+AllBuilds = {}
+BuildsURL = "http://presto.xeon.tw/api/builds"
+
 def downloadCSV(url):
     pass
 
-def createDir(label):
-    dirname = label.replace(".", "_")
-    if not os.path.exists(TestDataPath + dirname):
-        os.makedirs(TestDataPath + dirname)
+def createDir(label, category):
+    dirname = category + '/' + label.replace(".", "_")
+    if os.path.exists(TestDataPath + dirname):
+        shutil.rmtree(TestDataPath + dirname)
+    os.makedirs(TestDataPath + dirname)
     return dirname
 
 def findUrls(label, dirname):
@@ -192,9 +200,12 @@ def findUrls(label, dirname):
             result.append(tmp)
     return result
 
-def createDataFromLabel(label):
+def createDataFromLabel(label, category):
+    global AllBuilds
+
     print label
-    dirname = createDir(label)
+    dirname = createDir(label, category)
+
     results = findUrls(label, dirname)
     for item in results:
         response = urllib2.urlopen(item["csvUrl"])
@@ -205,6 +216,11 @@ def createDataFromLabel(label):
         HeroElementResult = combineSameData(parsedCSVResult.HeroElementLoadData)
         TrackingResult = combineSameData(parsedCSVResult.TrackingResourcesData)
 
+        if not HeroElementResult:
+            print 'Error: No HeroElementResult for ' + CDPTests[item["testUrl"]]["site"]
+        if not TrackingResult:
+            print 'Error: No HeroElementResult for ' + CDPTests[item["testUrl"]]["site"]
+
         jsonResult = {'HeroElementResult':HeroElementResult, 'TrackingResult':TrackingResult}
         jsonFileName = CDPTests[item["testUrl"]]["site"] + ".json"
         outputPath = TestDataPath + item["dir"] + "/"
@@ -213,22 +229,39 @@ def createDataFromLabel(label):
 
     summary = {"title": label}
     l = label.split('.')
-    if l[0] in testCategoryTable:
-        summary["TestCategory"] = testCategoryTable[l[0]]
 
     summary["Pref"] = {}
     for key in prefTable:
         summary["Pref"][prefTable[key]] = "true"
-    lnp = l[1].split('_')
-    if lnp[1] == 'OFF':
-        summary["Pref"][prefTable[lnp[0]]] = "false"
+    for s in l:
+        if s in testCategoryTable:
+            summary["TestCategory"] = testCategoryTable[s]
+            continue
 
-    throttle = l[2].split('_')
-    if throttle[1] == 'OFF':
-        summary["Pref"][prefTable[throttle[0]]] = "false"
+        lnp = s.split('_')
+        if lnp[0] == 'LNP':
+            if lnp[1] == 'OFF':
+                summary["Pref"][prefTable[lnp[0]]] = "false"
+            continue
 
-    if l[3] in testProxyTable:
-        summary["ProxyType"] = testProxyTable[l[3]]
+        throttle = s.split('_')
+        if throttle[0] == 'Throttle':
+            if throttle[1] == 'OFF':
+                summary["Pref"][prefTable[throttle[0]]] = "false"
+            continue
+
+        if s in testProxyTable:
+            summary["ProxyType"] = testProxyTable[s]
+            continue
+
+        if s in prefTable:
+            summary["Pref"][prefTable[s]] = "false"
+
+
+    for build in AllBuilds:
+        if build['revision'] == label:
+            summary['build'] = build['id']
+            break
 
 
     with open(TestDataPath + dirname + "/" + "summary.json", 'w') as outfile:
@@ -237,20 +270,26 @@ def createDataFromLabel(label):
 
 def main(argv):
     global AllTasks
+    global AllBuilds
     if not AllTasks:
         response = urllib2.urlopen(AllTaskURL)
         AllTasks = json.loads(response.read())
-    labels = ['TP.LNP_OFF.Throttle_OFF.internet',
-              'TP.LNP_OFF.Throttle_OFF.mitm',
-              'TP.LNP_OFF.Throttle_ON.internet',
-              'TP.LNP_OFF.Throttle_ON.mitm',
-              'TP.LNP_ON.Throttle_OFF.internet',
-              'TP.LNP_ON.Throttle_OFF.mitm',
-              'TP.LNP_ON.Throttle_ON.internet',
-              'TP.LNP_ON.Throttle_ON.mitm']
+
+    response = urllib2.urlopen(BuildsURL)
+    AllBuilds = json.loads(response.read())
+
+    labels = [  'TP.LNP_ON.Throttle_OFF.internet.tabs',
+                'TP.LNP_ON.Throttle_OFF.mitm.tabs',
+                'TP.LNP_ON.Throttle_ON.internet.tabs',
+                'TP.LNP_ON.Throttle_ON.mitm.tabs',
+                'TP.LNP_ON.Throttle_OFF.internet.tabs.NoTabPrio',
+                'TP.LNP_ON.Throttle_OFF.mitm.tabs.NoTabPrio',
+                'TP.LNP_ON.Throttle_ON.internet.tabs.NoTabPrio',
+                'TP.LNP_ON.Throttle_ON.mitm.tabs.NoTabPrio'
+                ]
 
     for label in labels:
-        createDataFromLabel(label)
+        createDataFromLabel(label, 'tabs')
 
 
 

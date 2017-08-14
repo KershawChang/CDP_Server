@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ static_url('assets/img/apple-icon.png')}}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ static_url('assets/img/favicon.png')}}">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+
+
+    <!-- Bootstrap core CSS     -->
+    <link href="{{ static_url('assets/css/bootstrap.min.css')}}" rel="stylesheet" />
+
+    <!-- Animation library for notifications   -->
+    <link href="{{ static_url('assets/css/animate.min.css')}}" rel="stylesheet"/>
+
+    <!--  Paper Dashboard core CSS    -->
+    <link href="{{ static_url('assets/css/paper-dashboard.css')}}" rel="stylesheet"/>
+
+
+    <!--  CSS for Demo Purpose, don't include it in your project     -->
+    <link href="{{ static_url('assets/css/demo.css')}}" rel="stylesheet" />
+
+
+    <!--  Fonts and icons     -->
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Muli:400,300' rel='stylesheet' type='text/css'>
+    <link href="{{ static_url('assets/css/themify-icons.css')}}" rel="stylesheet">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
+
+    <script>
+    function createIframe(selectTests) {
+        var res = selectTests.split("+");
+        if (res.length != 2) {
+            alert("Please select 2 tests.");
+            return;
+        }
+
+        var url = "result/selected?t1=" + res[0] + "&t2=" + res[1] + "&category={{selectedCategory}}";
+
+
+        var container = document.getElementById("test_content");
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+
+        var iframe = document.createElement("iframe");
+        var rect = container.getBoundingClientRect();
+
+        iframe.style.width = (rect.right - rect.left - 10).toString() + "px";
+        iframe.style.height = (rect.bottom - rect.top - 50).toString() + "px";
+        iframe.frameBorder = 0;
+        iframe.src = url;
+        console.log(url);
+        container.appendChild(iframe);
+    }
+    </script>
+
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="sidebar" data-background-color="white" data-active-color="danger">
+
+    <!--
+		Tip 1: you can change the color of the sidebar's background using: data-background-color="white | black"
+		Tip 2: you can change the color of the active button using the data-active-color="primary | info | success | warning | danger"
+	-->
+
+    	<div class="sidebar-wrapper">
+            <div class="logo">
+                <a class="simple-text">
+                    CDP Test
+                </a>
+            </div>
+
+            <ul class="nav">
+                {% for key in testCategoryTable %}
+                {% if key == selectedCategory %}
+                <li class="active">
+                {% else %}
+                <li class="">
+                {% end %}
+                    <a href="{{key + '.html'}}">
+                        <i class="ti-panel"></i>
+                        <p>{{testCategoryTable[key]}}</p>
+                    </a>
+                </li>
+                {% end %}
+            </ul>
+    	</div>
+    </div>
+
+    <div class="main-panel">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand">Select two tests:</a>
+                </div>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav navbar-left" style="margin-top:20px">
+                        <li>
+                            <select multiple id="e1" style="width:700px">
+                            {% for key in tests[selectedCategory] %}
+                            <option value="{{ key }}">{{ tests[selectedCategory][key]['title'] }}</option>
+                            {% end %}
+                            </select>
+                        </li>
+                        <li>
+                            <input type="button" id="compare" value="Compare" style="margin-top:5px; margin-left:5px">
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content" id="test_content" style="padding: 0px 0px; height:100%">
+        </div>
+
+    </div>
+</div>
+
+<script>
+  $("#e1").select2();
+  var count = 0;
+
+  $("select").on("select2:close", function (evt) {
+    var uldiv = $(this).siblings("span.select2").find("ul")
+    count = uldiv.find("li").length - 1;
+  });
+
+  $("#compare").click(function(){
+    //console.log($("#e1").val().join("+"));
+    createIframe($("#e1").val().join("+"));
+  });
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+

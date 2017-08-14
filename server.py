@@ -11,12 +11,18 @@ enable_pretty_logging()
 
 testDataDir = "static/testData/"
 testDataPath = os.path.join(os.getcwd(), testDataDir)
+testCategoryTable = {'tp': 'Tracking Protection',
+                     'tabs': 'Active Tab Priority'}
 tests = {};
 logPath = './server.log'
 
 class MainHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.render("index.html", title="CDP Test", tests=tests)
+    def get(self, name):
+        selectedCategory = name.replace('.html', '')
+        if not selectedCategory:
+            selectedCategory = 'tp'
+        print selectedCategory
+        self.render("index2.html", testCategoryTable=testCategoryTable, selectedCategory=selectedCategory, tests=tests)
 
 class StopHandler(tornado.web.RequestHandler):
     def get(self):
@@ -32,24 +38,25 @@ class LogHandler(tornado.web.RequestHandler):
 
 class ResultHandler(tornado.web.RequestHandler):
     def get(self, data):
+        category = self.get_argument("category")
         selectedKeys = [self.get_argument("t1"), self.get_argument("t2")]
-        print selectedKeys
         selectedTests = [];
         for k in selectedKeys:
-            selectedTests.append(tests[k])
+            selectedTests.append(tests[category][k])
 
         sites = ["CNN", "Twitter", "Wired", "nytimes", "500px"]
-        dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"},
-                     {"text": "Trackers", "value": "TrackingResult"}]
+        dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"}]
+        if category == 'tp':
+            dataTypes.append({"text": "Trackers", "value": "TrackingResult"})
         TimingDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)']
         self.render("dashboard_template.html", selectedTests=selectedTests, sites=sites, dataTypes=dataTypes, TimingDataStr=TimingDataStr)
 
 class Application(tornado.web.Application):
     def __init__(self):
-        handlers = [(r"/", MainHandler),
+        handlers = [(r"/result/([^/]*)", ResultHandler),
+                    (r"/(.*)", MainHandler),
                     (r"/stop", StopHandler),
-                    (r"/log", LogHandler),
-                    (r"/result/([^/]*)", ResultHandler)]
+                    (r"/log", LogHandler)]
         settings = {
             "template_path": os.path.join(os.getcwd(), "templates"),
             "static_path": os.path.join(os.getcwd(), "static")
@@ -58,12 +65,19 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **settings)
 
 if __name__ == "__main__":
-    dirs = [f for f in listdir(testDataPath) if isdir(join(testDataPath, f))]
-    for d in dirs:
-        summary = testDataPath + d + "/summary.json"
-        with open(summary) as data_file:
-            data = json.load(data_file)
-            tests[d] = {'title': data['title'], 'path': 'testData/' + d + '/'}
+    for key in testCategoryTable:
+        tests[key] = {}
+        tmpPath = testDataPath + key + '/'
+        dirs = [f for f in listdir(tmpPath) if isdir(join(tmpPath, f))]
+        for d in dirs:
+            summary = tmpPath + d + "/summary.json"
+            with open(summary) as data_file:
+                data = json.load(data_file)
+                tests[key][d] = {'title': data['title'], 'path': 'testData/' + key + '/' + d + '/', 'category':key}
+    for cat in tests:
+        print cat
+        for key in tests[cat]:
+            print tests[cat][key]
 
     app = Application()
     app.listen(8888)
@@ -72,3 +86,6 @@ if __name__ == "__main__":
     tornado.options.options.logging = "debug"
     tornado.options.parse_command_line(args)
     tornado.ioloop.IOLoop.current().start()
+
+
+
