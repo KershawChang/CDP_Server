@@ -60,9 +60,9 @@ class ResultHandler(tornado.web.RequestHandler):
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [(r"/result/([^/]*)", ResultHandler),
-                    (r"/(.*)", MainHandler),
                     (r"/stop", StopHandler),
-                    (r"/log", LogHandler)]
+                    (r"/log", LogHandler),
+                    (r"/(.*)", MainHandler)]
         settings = {
             "template_path": os.path.join(os.getcwd(), "templates"),
             "static_path": os.path.join(os.getcwd(), "static")
