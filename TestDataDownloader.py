@@ -163,7 +163,8 @@ TestDataPath = os.path.join(os.getcwd(), "static/testData/")
 WPTUrl = "http://wpt.xeon.tw/result/"
 
 testCategoryTable = {'tp': 'Tracking Protection',
-                     'tabs': 'Active Tab Priority (B/C Slots)'}
+                     'tabs': 'Active Tab Priority (B/C Slots)',
+                     'honza_0830': 'Tailing test 0830'}
 
 prefTable = {'LNP': 'privacy.trackingprotection.lower_network_priority',
              'Throttle': 'network.http.throttle.enable',
@@ -200,7 +201,7 @@ def findUrls(label, dirname):
             result.append(tmp)
     return result
 
-def createDataFromLabel(label, category):
+def createDataFromLabel(label, category, skipSummary):
     global AllBuilds
 
     print label
@@ -208,10 +209,14 @@ def createDataFromLabel(label, category):
 
     results = findUrls(label, dirname)
     for item in results:
+        if item["testUrl"] not in CDPTests:
+            continue
+
         response = urllib2.urlopen(item["csvUrl"])
         content = response.read()
         with open('tmp.csv', 'w') as file:
             file.write(content)
+
         parsedCSVResult = ParseCSV("tmp.csv", CDPTests[item["testUrl"]])
         HeroElementResult = combineSameData(parsedCSVResult.HeroElementLoadData)
         TrackingResult = combineSameData(parsedCSVResult.TrackingResourcesData)
@@ -226,6 +231,9 @@ def createDataFromLabel(label, category):
         outputPath = TestDataPath + item["dir"] + "/"
         with open(outputPath + jsonFileName, 'w') as outfile:
             json.dump(jsonResult, outfile, indent=4, separators=(',', ': '))
+
+    if skipSummary is True:
+        return
 
     summary = {"title": label}
     l = label.split('.')
@@ -278,18 +286,13 @@ def main(argv):
     response = urllib2.urlopen(BuildsURL)
     AllBuilds = json.loads(response.read())
 
-    labels = [  'TP.LNP_ON.Throttle_OFF.internet.tabs',
-                'TP.LNP_ON.Throttle_OFF.mitm.tabs',
-                'TP.LNP_ON.Throttle_ON.internet.tabs',
-                'TP.LNP_ON.Throttle_ON.mitm.tabs',
-                'TP.LNP_ON.Throttle_OFF.internet.tabs.NoTabPrio',
-                'TP.LNP_ON.Throttle_OFF.mitm.tabs.NoTabPrio',
-                'TP.LNP_ON.Throttle_ON.internet.tabs.NoTabPrio',
-                'TP.LNP_ON.Throttle_ON.mitm.tabs.NoTabPrio'
+    labels = [  '25d1ddb1cd1f07e9ae5641465219f0a6261c5617',
+                'ad03ea3dbdf39820a82f2ae919039448dca3da12',
+                'a9912274b61b8e9c8c0fa97030095cfbb9038565'
                 ]
 
     for label in labels:
-        createDataFromLabel(label, 'tabs')
+        createDataFromLabel(label, 'honza_0830', True)
 
 
 

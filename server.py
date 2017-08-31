@@ -12,21 +12,22 @@ enable_pretty_logging()
 testDataDir = "static/testData/"
 testDataPath = os.path.join(os.getcwd(), testDataDir)
 testCategoryTable = {'tp': 'Tracking Protection',
-                     'tabs': 'Active Tab Priority'}
+                     'tabs': 'Active Tab Priority',
+                     'honza_0830': 'Tailing test 0830'}
 tests = {};
 logPath = './server.log'
 
 interestPrefTable = {'tp':['privacy.trackingprotection.lower_network_priority',
                            'network.http.throttle.enable'],
                      'tabs':['network.http.active_tab_priority',
-                             'network.http.throttle.enable']}
+                             'network.http.throttle.enable'],
+                     'honza_0830':['preference']}
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self, name):
         selectedCategory = name.replace('.html', '')
         if not selectedCategory:
             selectedCategory = 'tp'
-        print selectedCategory
         self.render("index2.html", testCategoryTable=testCategoryTable, selectedCategory=selectedCategory, tests=tests)
 
 class StopHandler(tornado.web.RequestHandler):
@@ -51,7 +52,7 @@ class ResultHandler(tornado.web.RequestHandler):
 
         sites = ["CNN", "Twitter", "Wired", "nytimes", "500px"]
         dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"}]
-        if category == 'tp':
+        if category == 'tp' or category == 'honza_0830':
             dataTypes.append({"text": "Trackers", "value": "TrackingResult"})
         TimingDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)']
         prefList = interestPrefTable[category]
