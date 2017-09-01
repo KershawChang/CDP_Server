@@ -23,7 +23,7 @@ interestPrefTable = {'tp':['privacy.trackingprotection.lower_network_priority',
                      'tabs':['network.http.active_tab_priority',
                              'network.http.throttle.enable'],
                      'honza_0830':['preference'],
-                     'honza_0830':['preference']}
+                     'honza_0901':['preference']}
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self, name):
