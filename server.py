@@ -18,6 +18,8 @@ testCategoryTable = {'tp': 'Tracking Protection',
 tests = {};
 logPath = './server.log'
 
+showTrackerCategory = ['tp', 'honza_0830', 'honza_0901']
+
 interestPrefTable = {'tp':['privacy.trackingprotection.lower_network_priority',
                            'network.http.throttle.enable'],
                      'tabs':['network.http.active_tab_priority',
@@ -54,7 +56,7 @@ class ResultHandler(tornado.web.RequestHandler):
 
         sites = ["CNN", "Twitter", "Wired", "nytimes", "500px"]
         dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"}]
-        if category == 'tp' or category == 'honza_0830':
+        if category in showTrackerCategory:
             dataTypes.append({"text": "Trackers", "value": "TrackingResult"})
         TimingDataStr = ['Start Time (ms)', 'End Time (ms)', 'Time to Load (ms)', 'Time to First Byte (ms)']
         prefList = interestPrefTable[category]
