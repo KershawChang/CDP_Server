@@ -164,7 +164,8 @@ WPTUrl = "http://wpt.xeon.tw/result/"
 
 testCategoryTable = {'tp': 'Tracking Protection',
                      'tabs': 'Active Tab Priority (B/C Slots)',
-                     'honza_0830': 'Tailing test 0830'}
+                     'honza_0830': 'Tailing test 0830',
+                     'honza_0901': 'Tailing test 0901'}
 
 prefTable = {'LNP': 'privacy.trackingprotection.lower_network_priority',
              'Throttle': 'network.http.throttle.enable',
@@ -286,13 +287,13 @@ def main(argv):
     response = urllib2.urlopen(BuildsURL)
     AllBuilds = json.loads(response.read())
 
-    labels = [  '25d1ddb1cd1f07e9ae5641465219f0a6261c5617',
-                'ad03ea3dbdf39820a82f2ae919039448dca3da12',
-                'a9912274b61b8e9c8c0fa97030095cfbb9038565'
+    labels = [  'a0536161fd2f7accd748f52ac706c9038984f008',
+                '414d25ef3a26d53b30f39c924be7ac6c78709fa9',
+                '75dcac95e0b217e8bc1cbd661cb1b44c10d11c84'
                 ]
 
     for label in labels:
-        createDataFromLabel(label, 'honza_0830', True)
+        createDataFromLabel(label, 'honza_0901', True)
 
 
 

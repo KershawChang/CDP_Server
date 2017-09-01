@@ -13,7 +13,8 @@ testDataDir = "static/testData/"
 testDataPath = os.path.join(os.getcwd(), testDataDir)
 testCategoryTable = {'tp': 'Tracking Protection',
                      'tabs': 'Active Tab Priority',
-                     'honza_0830': 'Tailing test 0830'}
+                     'honza_0830': 'Tailing test 0830',
+                     'honza_0901': 'Tailing test 0901'}
 tests = {};
 logPath = './server.log'
 
@@ -21,6 +22,7 @@ interestPrefTable = {'tp':['privacy.trackingprotection.lower_network_priority',
                            'network.http.throttle.enable'],
                      'tabs':['network.http.active_tab_priority',
                              'network.http.throttle.enable'],
+                     'honza_0830':['preference'],
                      'honza_0830':['preference']}
 
 class MainHandler(tornado.web.RequestHandler):
