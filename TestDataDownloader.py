@@ -287,9 +287,9 @@ def main(argv):
     response = urllib2.urlopen(BuildsURL)
     AllBuilds = json.loads(response.read())
 
-    labels = [  'a0536161fd2f7accd748f52ac706c9038984f008',
-                '414d25ef3a26d53b30f39c924be7ac6c78709fa9',
-                '75dcac95e0b217e8bc1cbd661cb1b44c10d11c84'
+    labels = [  'a0536161fd2f7accd748f52ac706c9038984f008-mitm',
+                '414d25ef3a26d53b30f39c924be7ac6c78709fa9-mitm',
+                '75dcac95e0b217e8bc1cbd661cb1b44c10d11c84-mitm'
                 ]
 
     for label in labels:
