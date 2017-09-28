@@ -16,6 +16,9 @@ testCategoryTable = {'tp': 'Tracking Protection',
                      'honza_0830': 'Tailing test 0830',
                      'honza_0901': 'Tailing test 0901',
                      'bug1247843_tailing': 'favicon test'}
+
+additionalSites = {'bug1247843_tailing': ['realfavicongenerator']}
+
 tests = {};
 logPath = './server.log'
 
@@ -57,6 +60,9 @@ class ResultHandler(tornado.web.RequestHandler):
             selectedTests.append(tests[category][k])
 
         sites = ["CNN", "Twitter", "Wired", "nytimes", "500px"]
+        if category in additionalSites:
+            sites = sites + additionalSites[category]
+
         dataTypes = [{"text": "Hero Element", "value": "HeroElementResult"}]
         if category in showTrackerCategory:
             dataTypes.append({"text": "Trackers", "value": "TrackingResult"})
