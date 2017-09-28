@@ -14,7 +14,8 @@ testDataPath = os.path.join(os.getcwd(), testDataDir)
 testCategoryTable = {'tp': 'Tracking Protection',
                      'tabs': 'Active Tab Priority',
                      'honza_0830': 'Tailing test 0830',
-                     'honza_0901': 'Tailing test 0901'}
+                     'honza_0901': 'Tailing test 0901',
+                     'bug1247843_tailing': 'favicon test'}
 tests = {};
 logPath = './server.log'
 
@@ -25,7 +26,8 @@ interestPrefTable = {'tp':['privacy.trackingprotection.lower_network_priority',
                      'tabs':['network.http.active_tab_priority',
                              'network.http.throttle.enable'],
                      'honza_0830':['preference'],
-                     'honza_0901':['preference']}
+                     'honza_0901':['preference'],
+                     'bug1247843_tailing': ['network.http.tailing.enabled']}
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self, name):
@@ -79,6 +81,10 @@ if __name__ == "__main__":
     for key in testCategoryTable:
         tests[key] = {}
         tmpPath = testDataPath + key + '/'
+        if not os.path.isdir(tmpPath):
+            print tmpPath + " is not existed!"
+            continue
+
         dirs = [f for f in listdir(tmpPath) if isdir(join(tmpPath, f))]
         for d in dirs:
             summary = tmpPath + d + "/summary.json"

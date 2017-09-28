@@ -84,7 +84,8 @@ CDPTests = {
         {'site': 'cnn',
          'HeroElement': ['/2017/07/19/health/gupta-mccain-glioblastoma/index.html',
                          '/cnnnext/dam/assets/170720033628-john-mccain-brain-tumor-diagnosis-gupta-dnt-ac-00014000-exlarge-169.jpg',
-                         '/i/cnn/big/health/2017/07/20/john-mccain-brain-tumor-diagnosis-gupta-dnt-ac.cnn_1538305_ios_,440,650,840,1240,3000,5500,.mp4.csmil/segment1_1_av.ts?null=0'],
+                         '/i/cnn/big/health/2017/07/20/john-mccain-brain-tumor-diagnosis-gupta-dnt-ac.cnn_1538305_ios_,440,650,840,1240,3000,5500,.mp4.csmil/segment1_1_av.ts?null=0',
+                         '/favicon.ie9.ico'],
          'HeroElementDomain': [],
          'TrackingResources': ['static.chartbeat.com',
                                'amplifypixel.outbrain.com',
@@ -105,7 +106,8 @@ CDPTests = {
                           '/photo/220985045/q%3D80_h%3D300/v2?webp=true&sig=590846a2755f457ab10225917566a59d1462b3ba6d545b498a5fc0b9fb05a32d',
                           '/photo/220979443/q%3D80_h%3D300/v2?webp=true&sig=625d0eb86e5b363f77f088a2c70ec32f99e32fb13b666200fbea575f6bb4ca51',
                           '/photo/220978109/q%3D80_h%3D300/v2?webp=true&sig=cd131f2853a08b6a1b3faf038a303c719aee79a6f573b451207caf81c85605e8',
-                          '/popular'],
+                          '/popular',
+                          '/assets/favicon-7d8942fba5c5649f91a595d0fc749c83.ico'],
          'HeroElementDomain': ['drscdn.500px.org'],
          'TrackingResources': ['www.google-analytics.com',
                                 'graph.facebook.com',
@@ -115,7 +117,8 @@ CDPTests = {
         {'site': 'twitter',
          'HeroElement': ['/media/DFMT5bvWsAAzh54.jpg',
                           '/profile_banners/14893620/1471436582/1500x500',
-                          '/bagder'],
+                          '/bagder',
+                          '/favicons/favicon.ico'],
          'HeroElementDomain': ['pbs.twimg.com'],
          'TrackingResources': ['www.google-analytics.com',
                                 'cm.g.doubleclick.net',
@@ -124,7 +127,8 @@ CDPTests = {
     'https://www.wired.com/2017/03/mass-spying-isnt-just-intrusive-ineffective/':
         {'site': 'wired',
          'HeroElement': ['/photos/59266febcfe0d93c47430337/master/w_289,c_limit/AmericanSpiesCover.jpg',
-                          '/2017/03/mass-spying-isnt-just-intrusive-ineffective/'],
+                          '/2017/03/mass-spying-isnt-just-intrusive-ineffective/',
+                          '/favicon.ico'],
          'HeroElementDomain': [],
          'TrackingResources': ['s.skimresources.com',
                                 'dpm.demdex.net',
@@ -138,7 +142,8 @@ CDPTests = {
     'https://www.nytimes.com/2017/07/22/us/minneapolis-police-shooting.html?hp&action=click&pgtype=Homepage&clickSource=story-heading&module=photo-spot-region&region=top-news&WT.nav=top-news':
         {'site': 'nytimes',
          'HeroElement': ['/2017/07/22/us/minneapolis-police-shooting.html?hp&action=click&pgtype=Homepage&clickSource=story-heading&module=photo-spot-region&region=top-news&WT.nav=top-news',
-                          '/images/2017/07/22/us/23minneapolis1/23minneapolis1-superJumbo.jpg'],
+                          '/images/2017/07/22/us/23minneapolis1/23minneapolis1-superJumbo.jpg',
+                          '/favicon.ico'],
          'HeroElementDomain': [],
          'TrackingResources': ['contextual.media.net',
                                 'www.googletagservices.com',
@@ -149,7 +154,13 @@ CDPTests = {
                                 'pnytimes.chartbeat.net',
                                 'www.googleadservices.com',
                                 'sp.analytics.yahoo.com']
-        }
+        },
+    'https://realfavicongenerator.net':
+        {'site': 'realfavicongenerator',
+         'HeroElement': ['/the_favicon/favicon-32x32.png?v=XBr4XjEpXx'],
+         'HeroElementDomain': ['realfavicongenerator.net'],
+         'TrackingResources': []
+        },
 }
 
 AllTaskURL = "http://presto.xeon.tw/api/tasks"
@@ -165,7 +176,8 @@ WPTUrl = "http://wpt.xeon.tw/result/"
 testCategoryTable = {'tp': 'Tracking Protection',
                      'tabs': 'Active Tab Priority (B/C Slots)',
                      'honza_0830': 'Tailing test 0830',
-                     'honza_0901': 'Tailing test 0901'}
+                     'honza_0901': 'Tailing test 0901',
+                     'bug1247843_tailing': 'favicon test'}
 
 prefTable = {'LNP': 'privacy.trackingprotection.lower_network_priority',
              'Throttle': 'network.http.throttle.enable',
@@ -211,6 +223,7 @@ def createDataFromLabel(label, category, skipSummary):
     results = findUrls(label, dirname)
     for item in results:
         if item["testUrl"] not in CDPTests:
+            print item["testUrl"] + ' not in CDPTests'
             continue
 
         response = urllib2.urlopen(item["csvUrl"])
@@ -287,13 +300,12 @@ def main(argv):
     response = urllib2.urlopen(BuildsURL)
     AllBuilds = json.loads(response.read())
 
-    labels = [  'a0536161fd2f7accd748f52ac706c9038984f008-mitm',
-                '414d25ef3a26d53b30f39c924be7ac6c78709fa9-mitm',
-                '75dcac95e0b217e8bc1cbd661cb1b44c10d11c84-mitm'
+    labels = [  'bug1247843-tailing-on',
+                'bug1247843-tailing-off',
                 ]
 
     for label in labels:
-        createDataFromLabel(label, 'honza_0901', True)
+        createDataFromLabel(label, 'bug1247843_tailing', True)
 
 
 
